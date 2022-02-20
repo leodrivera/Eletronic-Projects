@@ -14,14 +14,14 @@ const int pins[3] = {0,1,4};
 //Define pin for using the touch
 #define  pin_touch 2
 
-//Calculate de size of the pins array
+//Calculate de number of the pins array
 const int len_pins = sizeof(pins)/sizeof(pins[0]);
 
 //small_delay: delay used inside each step
 #define SMALL_DELAY 7
 
 //get beats interval -> 1 BPM = 1 beat/(60*1000) ms
-const int BEATS_INTERVAL=60000/BPM;
+const int BEATS_INTERVAL= 60000/BPM;
 
 //get sleep_interval -> 1 BPM = 1 beat/(60*1000) ms
 const int SLEEP_INTERVAL = BEATS_INTERVAL-80*SMALL_DELAY;
