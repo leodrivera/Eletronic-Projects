@@ -22,9 +22,10 @@
 #include "secrets.h"
 
 //Prototypes
-void setup_wifi();
-void reconnectMQTT();
-void ota_setup();
+void setup_wifi(void);
+void reconnectMQTT(void);
+void ota_setup(void);
+void display_time(void);
 void mqtt_callback(char* topic, byte* payload, unsigned int length);
 
 /************************* Ports to Connect ****************************
@@ -32,6 +33,10 @@ void mqtt_callback(char* topic, byte* payload, unsigned int length);
  D2 -> SDA
  D4 -> IR LED
 ***********************************************************************/
+
+unsigned long prev_time = 0;
+#define MSG_BUFFER_SIZE (50)
+char msg[MSG_BUFFER_SIZE];
 
 /*************************** IR Setup ************************************/
 
@@ -55,14 +60,15 @@ WiFiUDP ntpUDP;
 #define NTP_INTERVAL 60*1000    // In miliseconds
 #define NTP_ADDRESS  "pool.ntp.br"  // change this to whatever pool is closest (see ntp.org)
 
+const char * week_days[] = {"Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sab"};
+
 NTPClient timeClient(ntpUDP, NTP_ADDRESS, TZ, NTP_INTERVAL);
 
 /************************* MQTT & Wi-Fi Setup *********************************/
-
-//Variáveis e objetos globais
 #define DEVICE_NAME "NodeMCU_IR"
 WiFiClient espClient; // Cria o objeto espClient
 PubSubClient mqtt_client(espClient); // Instancia o Cliente MQTT passando o objeto espClient
+
 
 void setup() {
   Serial.begin(115200);
@@ -76,7 +82,7 @@ void setup() {
   ota_setup();
 }
 
-void setup_wifi() {
+void setup_wifi(void) {
   // Connect to Wi-Fi access point.
   delay(10);
   Serial.println();
@@ -92,20 +98,19 @@ void setup_wifi() {
 
   WiFi.mode(WIFI_STA);
   WiFi.begin(WLAN_SSID, WLAN_PASS);
-  unsigned long prev_time = millis();
-  int counter = 1;
-  String text;
-  while (WiFi.waitForConnectResult() != WL_CONNECTED) {
+  prev_time = millis();
+  String text = "";
+  while (WiFi.status() != WL_CONNECTED) {
     delay(500);
     Serial.print(".");
     display.setTextAlignment(TEXT_ALIGN_CENTER);
     text += ".";
     display.drawString(64, 45, text);
+    display.display();
     if (millis() - prev_time > 5000) {
       Serial.println("Connection Failed! Rebooting...");
       ESP.restart();
     }
-    counter++;
   }
 
   display.clear();
@@ -124,12 +129,6 @@ void setup_wifi() {
   delay(1000);
 }
 
-void wifi_disconnected(WiFiEvent_t event){
-  Serial.println("Disconnected from Wi-Fi access point");
-  Serial.println("Reconnecting...");
-  WiFi.begin(WLAN_SSID, WLAN_PASS);
-}
-
 void mqtt_callback(char* topic, byte* payload, unsigned int length) {
   payload[length] = '\0';
   char msg[60];
@@ -143,17 +142,13 @@ void mqtt_callback(char* topic, byte* payload, unsigned int length) {
   }
 }
 
-void reconnectMQTT() {
+void reconnectMQTT(void) {
   // Loop until we're reconnected
   while (!mqtt_client.connected()) {
     Serial.println("Attempting MQTT connection...");
     // Attempt to connect
     if (mqtt_client.connect(DEVICE_NAME, MQTT_USERNAME, MQTT_PASS)) {
       Serial.println("Connected");
-      //char time_on[30];
-      //sprintf(time_on, "%ld", millis()/1000);
-      //mqtt_client.publish("/status/uptime", time_on);
-      Serial.println("Sent uptime message");
       mqtt_client.subscribe("/feeds/ac_on");
       mqtt_client.subscribe("/feeds/ac_21");
       mqtt_client.subscribe("/feeds/ac_22");
@@ -173,7 +168,7 @@ void reconnectMQTT() {
   }
 }
 
-void ota_setup() {
+void ota_setup(void) {
   // Hostname defaults to esp8266-[ChipID]
   ArduinoOTA.setHostname(DEVICE_NAME);
 
@@ -214,48 +209,50 @@ void ota_setup() {
   ArduinoOTA.begin();
 }
 
-unsigned long prev_time = millis();
+
+void display_time(void) {
+  display.clear(); // clear the display
+  timeClient.update(); // update NTP time
+  time_t t = timeClient.getEpochTime();
+  String clock_date = "";
+  clock_date += week_days[weekday(t) - 1];
+  clock_date += " - ";
+  clock_date += day(t);
+  clock_date += "/";
+  clock_date += month(t);
+  clock_date += "/";  
+  clock_date += year(t);
+
+  //Serial.println(clock_date);
+  display.setFont(ArialMT_Plain_24);
+  display.setTextAlignment(TEXT_ALIGN_CENTER);
+  display.drawString(64, 0, timeClient.getFormattedTime());
+  display.setFont(ArialMT_Plain_16);
+  display.setTextAlignment(TEXT_ALIGN_LEFT);
+  display.drawString(0, 30, clock_date);
+  display.setFont(ArialMT_Plain_10);
+  display.setTextAlignment(TEXT_ALIGN_RIGHT);
+  char time_on[30];
+  snprintf (time_on, MSG_BUFFER_SIZE, "%ld", millis());
+  display.drawString(128, 54, time_on);
+  display.display();
+  Serial.print("Free heap:");
+  Serial.println(ESP.getFreeHeap());
+}
+
 
 void loop() {
   ArduinoOTA.handle();
-  WiFi.onEvent(wifi_disconnected, WIFI_EVENT_STAMODE_DISCONNECTED); 
   if (!mqtt_client.connected()) {
     reconnectMQTT();
   }
   mqtt_client.loop();
   if (millis() - prev_time > 5000) {
     prev_time = millis();
-    char time_on[30];
-    sprintf(time_on, "%ld", millis()/1000);
-    Serial.println(time_on);
-    mqtt_client.publish("/status/uptime", time_on);
+    sprintf(msg, "%ld", millis()/1000);
+    mqtt_client.publish("/status/uptime", msg);
     Serial.println("Sent uptime message");
   }
-  display.clear(); // clear the display
-  timeClient.update(); // update NTP time
-  /*time_t t = timeClient.getEpochTime();
-  t = t - 3*60*60;
-  String clock_time = "";
-  if (hour(t) < 10) // add a zero if hour is under 10
-  clock_time += "0";
-  clock_time += hour(t);
-  clock_time += ":";
-  if (minute(t) < 10) // add a zero if minute is under 10
-  clock_time += "0";
-  clock_time += minute(t);
-  clock_time += ":";
-  if (second(t) < 10) // add a zero if second is under 10
-  clock_time += "0";  
-  clock_time += second(t);*/
-  //TODO: Adicionar dia da semana e data no formato dd/mm/yyy
-
-  //Serial.println(timeClient.getFormattedTime()); // time in utc
-  display.setFont(ArialMT_Plain_24);
-  display.setTextAlignment(TEXT_ALIGN_CENTER);
-  display.drawString(64, 22, timeClient.getFormattedTime());
-  display.setFont(ArialMT_Plain_10);
-  display.setTextAlignment(TEXT_ALIGN_RIGHT);
-  display.drawString(128, 54, String(millis()));
-  display.display();
+  display_time();
   delay(500);
 }
