@@ -247,8 +247,6 @@ void display_time(void) {
   display.setFont(ArialMT_Plain_10);
   display.setTextAlignment(TEXT_ALIGN_RIGHT);
   display.display();
-  Serial.print("Free heap:");
-  Serial.println(ESP.getFreeHeap());
 }
 
 
