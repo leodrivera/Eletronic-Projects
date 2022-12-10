@@ -19,11 +19,13 @@
 #include <Arduino.h>
 #include <IRremoteESP8266.h>
 #include <IRsend.h>
+#include "fonts.h"
 #include "secrets.h"
 
 //Prototypes
 void setup_wifi(void);
-void reconnectMQTT(void);
+void mqtt_reconnect(void);
+void check_connections(void);
 void ota_setup(void);
 void display_time(void);
 void mqtt_callback(char* topic, byte* payload, unsigned int length);
@@ -34,9 +36,8 @@ void mqtt_callback(char* topic, byte* payload, unsigned int length);
  D4 -> IR LED
 ***********************************************************************/
 
-unsigned long prev_time = 0;
-#define MSG_BUFFER_SIZE (50)
-char msg[MSG_BUFFER_SIZE];
+unsigned long prev_time;
+char msg[50];
 
 /*************************** IR Setup ************************************/
 
@@ -60,6 +61,7 @@ WiFiUDP ntpUDP;
 #define NTP_INTERVAL 60*1000    // In miliseconds
 #define NTP_ADDRESS  "pool.ntp.br"  // change this to whatever pool is closest (see ntp.org)
 
+String clock_date;
 const char * week_days[] = {"Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sab"};
 
 NTPClient timeClient(ntpUDP, NTP_ADDRESS, TZ, NTP_INTERVAL);
@@ -68,7 +70,6 @@ NTPClient timeClient(ntpUDP, NTP_ADDRESS, TZ, NTP_INTERVAL);
 #define DEVICE_NAME "NodeMCU_IR"
 WiFiClient espClient; // Cria o objeto espClient
 PubSubClient mqtt_client(espClient); // Instancia o Cliente MQTT passando o objeto espClient
-
 
 void setup() {
   Serial.begin(115200);
@@ -87,6 +88,7 @@ void setup_wifi(void) {
   delay(10);
   Serial.println();
   Serial.println("Connecting to:");
+  display.clear();
   display.setTextAlignment(TEXT_ALIGN_LEFT);
   display.setFont(ArialMT_Plain_10);
   display.drawString(0, 0, "Connecting to:");
@@ -131,7 +133,6 @@ void setup_wifi(void) {
 
 void mqtt_callback(char* topic, byte* payload, unsigned int length) {
   payload[length] = '\0';
-  char msg[60];
   sprintf(msg, "Received topic [%s] with payload [%s]", topic, payload);
   Serial.println(msg);
   if (String(topic) == "/feeds/ac-on"){
@@ -142,7 +143,7 @@ void mqtt_callback(char* topic, byte* payload, unsigned int length) {
   }
 }
 
-void reconnectMQTT(void) {
+void mqtt_reconnect(void) {
   // Loop until we're reconnected
   while (!mqtt_client.connected()) {
     Serial.println("Attempting MQTT connection...");
@@ -159,6 +160,13 @@ void reconnectMQTT(void) {
       mqtt_client.subscribe("/feeds/sound_down");
       Serial.println("Feeds subscribed");
     } else {
+      display.clear();
+      display.setTextAlignment(TEXT_ALIGN_LEFT);
+      display.setFont(ArialMT_Plain_16);
+      display.drawString(0, 0, "MQTT connection");
+      display.drawString(0, 20, "failed");
+      display.drawString(0, 40, "Retrying...");
+      display.display();
       Serial.print("failed, rc=");
       Serial.print(mqtt_client.state());
       Serial.println(" try again in 5 seconds");
@@ -209,12 +217,19 @@ void ota_setup(void) {
   ArduinoOTA.begin();
 }
 
+void check_connections(void){
+  if (WiFi.status() != WL_CONNECTED){
+      setup_wifi();
+    }
+  if (!mqtt_client.connected()) 
+      mqtt_reconnect();
+}
 
 void display_time(void) {
   display.clear(); // clear the display
   timeClient.update(); // update NTP time
   time_t t = timeClient.getEpochTime();
-  String clock_date = "";
+  clock_date = "";
   clock_date += week_days[weekday(t) - 1];
   clock_date += " - ";
   clock_date += day(t);
@@ -223,18 +238,14 @@ void display_time(void) {
   clock_date += "/";  
   clock_date += year(t);
 
-  //Serial.println(clock_date);
-  display.setFont(ArialMT_Plain_24);
+  display.setFont(Roboto_30);
   display.setTextAlignment(TEXT_ALIGN_CENTER);
   display.drawString(64, 0, timeClient.getFormattedTime());
-  display.setFont(ArialMT_Plain_16);
+  display.setFont(Roboto_16);
   display.setTextAlignment(TEXT_ALIGN_LEFT);
-  display.drawString(0, 30, clock_date);
+  display.drawString(0, 40, clock_date);
   display.setFont(ArialMT_Plain_10);
   display.setTextAlignment(TEXT_ALIGN_RIGHT);
-  char time_on[30];
-  snprintf (time_on, MSG_BUFFER_SIZE, "%ld", millis());
-  display.drawString(128, 54, time_on);
   display.display();
   Serial.print("Free heap:");
   Serial.println(ESP.getFreeHeap());
@@ -243,9 +254,7 @@ void display_time(void) {
 
 void loop() {
   ArduinoOTA.handle();
-  if (!mqtt_client.connected()) {
-    reconnectMQTT();
-  }
+  check_connections();
   mqtt_client.loop();
   if (millis() - prev_time > 5000) {
     prev_time = millis();
