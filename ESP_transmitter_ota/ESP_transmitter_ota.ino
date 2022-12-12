@@ -34,10 +34,6 @@ void mqtt_callback(char* topic, byte* payload, unsigned int length);
  D1 -> SCL
  D2 -> SDA
  D5 -> IR LED
-***********************************************************************/
-
-unsigned long prev_time;
-char msg[50];
 
 /*************************** IR Setup ************************************/
 
@@ -62,9 +58,9 @@ SH1106Wire display(0x3c, SDA, SCL);
 WiFiUDP ntpUDP;
 
 // Define NTP properties
-#define TZ   -3*60*60      // In seconds
+#define TZ -3*60*60      // In seconds
 #define NTP_INTERVAL 60*1000    // In miliseconds
-#define NTP_ADDRESS  "pool.ntp.br"  // change this to whatever pool is closest (see ntp.org)
+#define NTP_ADDRESS "pool.ntp.br"  // Change this to whatever pool is closest (see ntp.org)
 
 String clock_date;
 const char * week_days[] = {"Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sab"};
@@ -73,8 +69,10 @@ NTPClient timeClient(ntpUDP, NTP_ADDRESS, TZ, NTP_INTERVAL);
 
 /************************* MQTT & Wi-Fi Setup *********************************/
 #define DEVICE_NAME "NodeMCU_IR"
-WiFiClient espClient; // Cria o objeto espClient
-PubSubClient mqtt_client(espClient); // Instancia o Cliente MQTT passando o objeto espClient
+unsigned long prev_time;
+char msg[50];
+WiFiClient espClient;
+PubSubClient mqtt_client(espClient);
 
 void setup() {
   Serial.begin(115200);
@@ -328,8 +326,6 @@ void display_time(void) {
   clock_date += month(t);
   clock_date += "/";  
   clock_date += year(t);
-  //Serial.println(timeClient.getFormattedTime());
-  //Serial.println(clock_date);
   display.setFont(Roboto_30);
   display.setTextAlignment(TEXT_ALIGN_CENTER);
   display.drawString(64, 0, timeClient.getFormattedTime());
