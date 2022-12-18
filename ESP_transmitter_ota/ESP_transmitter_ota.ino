@@ -52,6 +52,7 @@ uint16_t AC_24[347] = {9026, 4500,  554, 588,  584, 554,  556, 564,  556, 1694, 
 /*************************** OLED Setup ************************************/
 SH1106Wire display(0x3c, SDA, SCL);
 
+bool display_on = true;
 /*************************** NTP Setup ************************************/
 // Set up the NTP UDP client
 WiFiUDP ntpUDP;
@@ -136,8 +137,8 @@ void setup_wifi(void) {
 void mqtt_callback(char* topic, byte* payload, unsigned int length) {
   payload[length] = '\0';
   sprintf(msg, "Received topic [%s] with payload [%s]", topic, payload);
-  String str_payload = String((char*)payload);
   Serial.println(msg);
+  String str_payload = String((char*)payload);
   if (String(topic).equals("ac/power")){
     if (str_payload.equals("OFF")){
       Serial.println("Firing ac_off");
@@ -226,6 +227,16 @@ void mqtt_callback(char* topic, byte* payload, unsigned int length) {
     irsend.sendNEC(0x5EA138C7);
     irsend.sendRaw(NEC_Repeat, 3, 38);
   }
+  if (String(topic).equals("ir_transmitter/display")){
+    if (str_payload.equals("ON")){
+      Serial.println("Display On");
+      display_on = true;
+    }
+    if (str_payload.equals("OFF")){
+      Serial.println("Display Off");
+      display_on = false;
+    }
+  }
 }
 
 void mqtt_reconnect(void) {
@@ -246,6 +257,7 @@ void mqtt_reconnect(void) {
       mqtt_client.subscribe("sound/up");
       mqtt_client.subscribe("sound/down");
       mqtt_client.subscribe("sound/mute");
+      mqtt_client.subscribe("ir_transmitter/display");
       Serial.println("Feeds subscribed");
     } else {
       display.clear();
@@ -328,9 +340,7 @@ void display_time(void) {
   display.setTextAlignment(TEXT_ALIGN_CENTER);
   display.drawString(64, 0, timeClient.getFormattedTime());
   display.setFont(Roboto_15);
-  display.setTextAlignment(TEXT_ALIGN_LEFT);
-  display.drawString(0, 40, clock_date);
-  display.display();
+  display.drawString(64, 40, clock_date);
 }
 
 void loop() {
@@ -343,6 +353,11 @@ void loop() {
     mqtt_client.publish("ir_transmitter/status", msg);
     Serial.println("Sent uptime message");
   }
-  display_time();
+  if (display_on){
+    display_time();
+  } else {
+    display.clear(); // clear the display
+  }
+  display.display();
   delay(100);
 }
