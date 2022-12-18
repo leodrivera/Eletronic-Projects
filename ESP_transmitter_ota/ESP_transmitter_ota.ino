@@ -51,15 +51,15 @@ uint16_t AC_24[347] = {9026, 4500,  554, 588,  584, 554,  556, 564,  556, 1694, 
 
 /*************************** OLED Setup ************************************/
 SH1106Wire display(0x3c, SDA, SCL);
-
 bool display_on = true;
+
 /*************************** NTP Setup ************************************/
 // Set up the NTP UDP client
 WiFiUDP ntpUDP;
 
 // Define NTP properties
 #define TZ -3*60*60      // In seconds
-#define NTP_INTERVAL 60*1000    // In miliseconds
+#define NTP_INTERVAL 10*60*1000    // In miliseconds
 #define NTP_ADDRESS "pool.ntp.br"  // Change this to whatever pool is closest (see ntp.org)
 
 String clock_date;
@@ -227,7 +227,7 @@ void mqtt_callback(char* topic, byte* payload, unsigned int length) {
     irsend.sendNEC(0x5EA138C7);
     irsend.sendRaw(NEC_Repeat, 3, 38);
   }
-  if (String(topic).equals("ir_transmitter/display")){
+  if (String(topic).equals("ir_tx/display")){
     if (str_payload.equals("ON")){
       Serial.println("Display On");
       display_on = true;
@@ -244,6 +244,7 @@ void mqtt_reconnect(void) {
   while (!mqtt_client.connected()) {
     Serial.println("Attempting MQTT connection...");
     // Attempt to connect
+    // Attention: For some reason, using a long name for the topic causes the ntp to break.
     if (mqtt_client.connect(DEVICE_NAME, MQTT_USERNAME, MQTT_PASS)) {
       Serial.println("Connected");
       mqtt_client.subscribe("ac/power");
@@ -257,7 +258,7 @@ void mqtt_reconnect(void) {
       mqtt_client.subscribe("sound/up");
       mqtt_client.subscribe("sound/down");
       mqtt_client.subscribe("sound/mute");
-      mqtt_client.subscribe("ir_transmitter/display");
+      mqtt_client.subscribe("ir_tx/display");
       Serial.println("Feeds subscribed");
     } else {
       display.clear();
@@ -326,7 +327,6 @@ void check_connections(void){
 
 void display_time(void) {
   display.clear(); // clear the display
-  timeClient.update(); // update NTP time
   time_t t = timeClient.getEpochTime();
   clock_date = "";
   clock_date += week_days[weekday(t) - 1];
@@ -347,10 +347,11 @@ void loop() {
   ArduinoOTA.handle();
   check_connections();
   mqtt_client.loop();
+  timeClient.update(); // update NTP time
   if (millis() - prev_time > 5000) {
     prev_time = millis();
     sprintf(msg, "%ld", millis()/1000);
-    mqtt_client.publish("ir_transmitter/status", msg);
+    mqtt_client.publish("ir_tx/status", msg);
     Serial.println("Sent uptime message");
   }
   if (display_on){
