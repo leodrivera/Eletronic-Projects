@@ -351,7 +351,7 @@ void loop() {
   if (millis() - prev_time > 5000) {
     prev_time = millis();
     sprintf(msg, "%ld", millis()/1000);
-    mqtt_client.publish("ir_tx/status", msg);
+    mqtt_client.publish("ir_tx/uptime", msg);
     Serial.println("Sent uptime message");
   }
   if (display_on){
