@@ -28,6 +28,7 @@ void mqtt_reconnect(void);
 void check_connections(void);
 void ota_setup(void);
 void display_time(void);
+String getFormattedDate(time_t t);
 void mqtt_callback(char* topic, byte* payload, unsigned int length);
 
 /************************* Ports to Connect ****************************
@@ -59,10 +60,9 @@ WiFiUDP ntpUDP;
 
 // Define NTP properties
 #define TZ -3*60*60      // In seconds
-#define NTP_INTERVAL 10*60*1000    // In miliseconds
+#define NTP_INTERVAL 30*60*1000    // In miliseconds
 #define NTP_ADDRESS "pool.ntp.br"  // Change this to whatever pool is closest (see ntp.org)
 
-String clock_date;
 const char * week_days[] = {"Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sab"};
 
 NTPClient timeClient(ntpUDP, NTP_ADDRESS, TZ, NTP_INTERVAL);
@@ -325,22 +325,22 @@ void check_connections(void){
       mqtt_reconnect();
 }
 
+String getFormattedDate(time_t t) {
+  String week_day = week_days[weekday(t) - 1];
+  String day_str = day(t) < 10 ? "0" + String(day(t)) : String(day(t));
+  String month_str = month(t) < 10 ? "0" + String(month(t)) : String(month(t));
+  String year_str = year(t) < 10 ? "0" + String(year(t)) : String(year(t));
+  return week_day + " - " + day_str + "/" + month_str + "/" + year_str;
+}
+
 void display_time(void) {
-  display.clear(); // clear the display
   time_t t = timeClient.getEpochTime();
-  clock_date = "";
-  clock_date += week_days[weekday(t) - 1];
-  clock_date += " - ";
-  clock_date += day(t);
-  clock_date += "/";
-  clock_date += month(t);
-  clock_date += "/";  
-  clock_date += year(t);
+  display.clear(); // clear the display
   display.setFont(Roboto_30);
   display.setTextAlignment(TEXT_ALIGN_CENTER);
   display.drawString(64, 0, timeClient.getFormattedTime());
   display.setFont(Roboto_15);
-  display.drawString(64, 40, clock_date);
+  display.drawString(64, 40, getFormattedDate(t));
 }
 
 void loop() {
