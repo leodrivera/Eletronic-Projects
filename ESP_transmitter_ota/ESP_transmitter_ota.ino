@@ -329,8 +329,8 @@ String getFormattedDate(time_t t) {
   String week_day = week_days[weekday(t) - 1];
   String day_str = day(t) < 10 ? "0" + String(day(t)) : String(day(t));
   String month_str = month(t) < 10 ? "0" + String(month(t)) : String(month(t));
-  String year_str = year(t) < 10 ? "0" + String(year(t)) : String(year(t));
-  return week_day + " - " + day_str + "/" + month_str + "/" + year_str;
+  String yeart_str = String(year(t));
+  return week_day + " - " + day_str + "/" + month_str + "/" + yeart_str;
 }
 
 void display_time(void) {
