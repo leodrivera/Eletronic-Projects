@@ -60,7 +60,7 @@ WiFiUDP ntpUDP;
 
 // Define NTP properties
 #define TZ -3*60*60      // In seconds
-#define NTP_INTERVAL 30*60*1000    // In miliseconds
+#define NTP_INTERVAL 1*3600*1000    // In miliseconds
 #define NTP_ADDRESS "pool.ntp.br"  // Change this to whatever pool is closest (see ntp.org)
 
 const char * week_days[] = {"Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sab"};
@@ -139,95 +139,95 @@ void mqtt_callback(char* topic, byte* payload, unsigned int length) {
   sprintf(msg, "Received topic [%s] with payload [%s]", topic, payload);
   Serial.println(msg);
   String str_payload = String((char*)payload);
-  if (String(topic).equals("ac/power")){
-    if (str_payload.equals("OFF")){
-      Serial.println("Firing ac_off");
-      mqtt_client.publish("ac/state", "off");
+  if (String(topic).equals("bedroom/ac/command")){
+    if (str_payload.equals("off")){
+      Serial.println("Firing bedroom ac_off");
+      mqtt_client.publish("bedroom/ac/state", "off");
       irsend.sendRaw(AC_off, 347, 38);
     }
   }
-  if (String(topic).equals("ac/temperature")){
+  if (String(topic).equals("bedroom/ac/temperature")){
     if (str_payload.equals("18.0")){
-      Serial.println("Firing ac_18");
-      mqtt_client.publish("ac/state", "cool");
+      Serial.println("Firing bedroom ac_18");
+      mqtt_client.publish("bedroom/ac/state", "cool");
       irsend.sendRaw(AC_18, 347, 38);
     }
     if (str_payload.equals("19.0")){
-      Serial.println("Firing ac_19");
-      mqtt_client.publish("ac/state", "cool");
+      Serial.println("Firing bedroom ac_19");
+      mqtt_client.publish("bedroom/ac/state", "cool");
       irsend.sendRaw(AC_19, 347, 38);
     }
     if (str_payload.equals("20.0")){
-      Serial.println("Firing ac_20");
-      mqtt_client.publish("ac/state", "cool");
+      Serial.println("Firing bedroom ac_20");
+      mqtt_client.publish("bedroom/ac/state", "cool");
       irsend.sendRaw(AC_20, 347, 38);
     }
     if (str_payload.equals("21.0")){
-      Serial.println("Firing ac_21");
-      mqtt_client.publish("ac/state", "cool");
+      Serial.println("Firing bedroom ac_21");
+      mqtt_client.publish("bedroom/ac/state", "cool");
       irsend.sendRaw(AC_21, 347, 38);
     }
     if (str_payload.equals("22.0")){
-      Serial.println("Firing ac_22");
-      mqtt_client.publish("ac/state", "cool");
+      Serial.println("Firing bedroom ac_22");
+      mqtt_client.publish("bedroom/ac/state", "cool");
       irsend.sendRaw(AC_22, 347, 38);
     }
     if (str_payload.equals("23.0")){
-      Serial.println("Firing ac_23");
-      mqtt_client.publish("ac/state", "cool");
+      Serial.println("Firing bedroom ac_23");
+      mqtt_client.publish("bedroom/ac/state", "cool");
       irsend.sendRaw(AC_23, 347, 38);
     }
     if (str_payload.equals("24.0")){
-      Serial.println("Firing ac_24");
-      mqtt_client.publish("ac/state", "cool");
+      Serial.println("Firing bedroom ac_24");
+      mqtt_client.publish("bedroom/ac/state", "cool");
       irsend.sendRaw(AC_24, 347, 38);
     }
   }
-  if (String(topic).equals("tv/power")){
-    Serial.println("Firing tv_power");
+  if (String(topic).equals("bedroom/tv/power")){
+    Serial.println("Firing bedroom tv_power");
     irsend.sendSAMSUNG(0xE0E040BF);
   }
-  if (String(topic).equals("sound/power")){
-    Serial.println("Firing sound_power");
+  if (String(topic).equals("bedroom/sound/power")){
+    Serial.println("Firing bedroom sound_power");
     irsend.sendNEC(0x7E8154AB);
     irsend.sendRaw(NEC_Repeat, 3, 38);
   }
-  if (String(topic).equals("sound/hdmi1")){
-    Serial.println("Firing sound_hdmi1");
+  if (String(topic).equals("bedroom/sound/hdmi1")){
+    Serial.println("Firing bedroom sound_hdmi1");
     irsend.sendNEC(0x5EA1E21C);
     irsend.sendRaw(NEC_Repeat, 3, 38);
   }
-  if (String(topic).equals("sound/hdmi2")){
-    Serial.println("Firing sound_hdmi2");
+  if (String(topic).equals("bedroom/sound/hdmi2")){
+    Serial.println("Firing bedroom sound_hdmi2");
     irsend.sendNEC(0x5EA152AC);
     irsend.sendRaw(NEC_Repeat, 3, 38);
   }
-  if (String(topic).equals("sound/av4")){
-    Serial.println("Firing sound_av4");
+  if (String(topic).equals("bedroom/sound/av4")){
+    Serial.println("Firing bedroom sound_av4");
     irsend.sendNEC(0x5EA13AC4);
     irsend.sendRaw(NEC_Repeat, 3, 38);
   }
-  if (String(topic).equals("sound/audio1")){
+  if (String(topic).equals("bedroom/sound/audio1")){
     Serial.println("Firing sound_audio1");
     irsend.sendNEC(0x5EA1A658);
     irsend.sendRaw(NEC_Repeat, 3, 38);
   }
-  if (String(topic).equals("sound/up")){
-    Serial.println("Firing sound_up");
+  if (String(topic).equals("bedroom/sound/up")){
+    Serial.println("Firing bedroom sound_up");
     irsend.sendNEC(0x5EA158A7);
     irsend.sendRaw(NEC_Repeat, 3, 38);
   }
-  if (String(topic).equals("sound/down")){
-    Serial.println("Firing sound_down");
+  if (String(topic).equals("bedroom/sound/down")){
+    Serial.println("Firing bedroom sound_down");
     irsend.sendNEC(0x5EA1D827);
     irsend.sendRaw(NEC_Repeat, 3, 38);
   }
-  if (String(topic).equals("sound/mute")){
-    Serial.println("Firing sound_mute");
+  if (String(topic).equals("bedroom/sound/mute")){
+    Serial.println("Firing bedroom sound_mute");
     irsend.sendNEC(0x5EA138C7);
     irsend.sendRaw(NEC_Repeat, 3, 38);
   }
-  if (String(topic).equals("ir_tx/display")){
+  if (String(topic).equals("bedroom/ir_tx/display")){
     if (str_payload.equals("ON")){
       Serial.println("Display On");
       display_on = true;
@@ -247,18 +247,18 @@ void mqtt_reconnect(void) {
     // Attention: For some reason, using a long name for the topic causes the ntp to break.
     if (mqtt_client.connect(DEVICE_NAME, MQTT_USERNAME, MQTT_PASS)) {
       Serial.println("Connected");
-      mqtt_client.subscribe("ac/power");
-      mqtt_client.subscribe("ac/temperature");
-      mqtt_client.subscribe("tv/power");
-      mqtt_client.subscribe("sound/power");
-      mqtt_client.subscribe("sound/hdmi1");
-      mqtt_client.subscribe("sound/hdmi2");
-      mqtt_client.subscribe("sound/av4");
-      mqtt_client.subscribe("sound/audio1");
-      mqtt_client.subscribe("sound/up");
-      mqtt_client.subscribe("sound/down");
-      mqtt_client.subscribe("sound/mute");
-      mqtt_client.subscribe("ir_tx/display");
+      mqtt_client.subscribe("bedroom/ac/command");
+      mqtt_client.subscribe("bedroom/ac/temperature");
+      mqtt_client.subscribe("bedroom/tv/power");
+      mqtt_client.subscribe("bedroom/sound/power");
+      mqtt_client.subscribe("bedroom/sound/hdmi1");
+      mqtt_client.subscribe("bedroom/sound/hdmi2");
+      mqtt_client.subscribe("bedroom/sound/av4");
+      mqtt_client.subscribe("bedroom/sound/audio1");
+      mqtt_client.subscribe("bedroom/sound/up");
+      mqtt_client.subscribe("bedroom/sound/down");
+      mqtt_client.subscribe("bedroom/sound/mute");
+      mqtt_client.subscribe("bedroom/ir_tx/display");
       Serial.println("Feeds subscribed");
     } else {
       display.clear();
@@ -351,7 +351,7 @@ void loop() {
   if (millis() - prev_time > 5000) {
     prev_time = millis();
     sprintf(msg, "%ld", millis()/1000);
-    mqtt_client.publish("ir_tx/uptime", msg);
+    mqtt_client.publish("bedroom/ir_tx/uptime", msg);
     Serial.println("Sent uptime message");
   }
   if (display_on){
