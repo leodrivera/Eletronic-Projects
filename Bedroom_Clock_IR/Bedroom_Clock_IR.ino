@@ -1,4 +1,4 @@
-// ESP IR Transmitter with OLED display
+// ESP IR Transmitter with OLED clock display
 // Written by Leonardo Rivera
 
 // Libraries needed:
