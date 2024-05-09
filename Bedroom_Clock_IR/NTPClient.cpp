@@ -361,7 +361,7 @@ String NTPClient::getFormattedDateTime(const String& format) {
         }
 
         if (escape) {
-            switch (c) {                
+            switch (c) {
                 case 'Y': result += String(this->getYear()); break;
                 case 'y': result += String(this->getYear()).substring(2); break;
                 case 'm': result += (this->getMonth() < 10 ? "0" : "") + String(this->getMonth()); break;
@@ -400,7 +400,7 @@ void NTPClient::setUpdateInterval(unsigned long updateInterval) {
 }
 
 void NTPClient::setPoolServerName(const char* poolServerName) {
-    this->_poolServerName = poolServerName;
+  this->_poolServerName = poolServerName;
 }
 
 void NTPClient::setDateLanguage(const String &dateLanguage) {
