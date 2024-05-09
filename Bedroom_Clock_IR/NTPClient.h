@@ -15,20 +15,6 @@ struct DateLanguageData {
     const char* longMonths[12];
 };
 
-const DateLanguageData EnglishData = {
-    {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"},
-    {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"},
-    {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"},
-    {"January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"}
-};
-
-const DateLanguageData PortugueseData = {
-    {"Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"},
-    {"Domingo", "Segunda-feira", "Terça-feira", "Quarta-feira", "Quinta-feira", "Sexta-feira", "Sábado"},
-    {"Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"},
-    {"Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"}
-};
-
 class NTPClient {
   private:
     UDP*          _udp;

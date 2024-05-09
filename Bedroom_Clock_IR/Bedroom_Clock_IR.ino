@@ -1,4 +1,4 @@
-// ESP IR Transmitter with OLED clock display
+// ESP IR Transmitter with OLED display
 // Written by Leonardo Rivera
 
 // Libraries needed:
@@ -60,7 +60,7 @@ WiFiUDP ntpUDP;
 #define TZ -3*60*60      // In seconds
 #define NTP_INTERVAL 1*3600*1000    // In miliseconds
 #define NTP_ADDRESS "pool.ntp.br"  // Change this to whatever pool is closest (see ntp.org)
-#define DATE_LANGUAGE "pt"  // Available languages: "pt" and "en" (default)
+#define DATE_LANGUAGE "pt"  // Available languages: "pt", "es" and "en" (default)
 
 NTPClient timeClient(ntpUDP, NTP_ADDRESS, TZ, NTP_INTERVAL);
 
