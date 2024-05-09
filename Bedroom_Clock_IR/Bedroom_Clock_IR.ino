@@ -3,22 +3,21 @@
 
 // Libraries needed:
 //  SH1106Wire.h: https://github.com/ThingPulse/esp8266-oled-ssd1306
-//  PubSubClient.h: https://github.com/knolleary/pubsubclient
-//  NTPClient.h: https://github.com/arduino-libraries/NTPClient
+//  PubSubClient.h: https://github.com/hmueller01/pubsubclient/tree/dev-fixes, fork of https://github.com/knolleary/pubsubclient
+//  NTPClient.h: https://github.com/leodrivera/NTPClient, fork of https://github.com/arduino-libraries/NTPClient
 //  IRremoteESP8266 & IRsend.h: https://github.com/crankyoldgit/IRremoteESP8266
 
 #include <Wire.h>
-#include <TimeLib.h>
 #include "SH1106Wire.h"
 #include <ESP8266WiFi.h>
-#include <PubSubClient.h>
 #include <ESP8266mDNS.h>
 #include <WiFiUdp.h>
-#include <NTPClient.h>
 #include <ArduinoOTA.h>
 #include <Arduino.h>
 #include <IRremoteESP8266.h>
 #include <IRsend.h>
+#include "PubSubClient.h"
+#include "NTPClient.h"
 #include "fonts.h"
 #include "secrets.h"
 
@@ -28,7 +27,6 @@ void mqtt_reconnect(void);
 void check_connections(void);
 void ota_setup(void);
 void display_time(void);
-String getFormattedDate(time_t t);
 void mqtt_callback(char* topic, byte* payload, unsigned int length);
 
 /************************* Ports to Connect ****************************
@@ -62,13 +60,12 @@ WiFiUDP ntpUDP;
 #define TZ -3*60*60      // In seconds
 #define NTP_INTERVAL 1*3600*1000    // In miliseconds
 #define NTP_ADDRESS "pool.ntp.br"  // Change this to whatever pool is closest (see ntp.org)
-
-const char * week_days[] = {"Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sab"};
+#define DATE_LANGUAGE "pt"  // Available languages: "pt" and "en" (default)
 
 NTPClient timeClient(ntpUDP, NTP_ADDRESS, TZ, NTP_INTERVAL);
 
 /************************* MQTT & Wi-Fi Setup *********************************/
-#define DEVICE_NAME "NodeMCU_IR"
+#define DEVICE_NAME "Bedroom_Clock_IR"
 unsigned long prev_time;
 char msg[50];
 WiFiClient espClient;
@@ -81,6 +78,7 @@ void setup() {
   display.init(); // Start the display
   setup_wifi(); // Start the Wi-Fi connection
   timeClient.begin();   // Start the NTP UDP client
+  timeClient.setDateLanguage(DATE_LANGUAGE);
   mqtt_client.setServer(MQTT_SERVER, MQTT_SERVERPORT);
   mqtt_client.setCallback(mqtt_callback);
   ota_setup();
@@ -139,95 +137,95 @@ void mqtt_callback(char* topic, byte* payload, unsigned int length) {
   sprintf(msg, "Received topic [%s] with payload [%s]", topic, payload);
   Serial.println(msg);
   String str_payload = String((char*)payload);
-  if (String(topic).equals("bedroom/ac/command")){
+  if (String(topic).equals("bed/ac/command")){
     if (str_payload.equals("off")){
       Serial.println("Firing bedroom ac_off");
-      mqtt_client.publish("bedroom/ac/state", "off");
+      mqtt_client.publish("bed/ac/state", "off");
       irsend.sendRaw(AC_off, 347, 38);
     }
   }
-  if (String(topic).equals("bedroom/ac/temperature")){
+  if (String(topic).equals("bed/ac/temp")){
     if (str_payload.equals("18.0")){
       Serial.println("Firing bedroom ac_18");
-      mqtt_client.publish("bedroom/ac/state", "cool");
+      mqtt_client.publish("bed/ac/state", "cool");
       irsend.sendRaw(AC_18, 347, 38);
     }
     if (str_payload.equals("19.0")){
       Serial.println("Firing bedroom ac_19");
-      mqtt_client.publish("bedroom/ac/state", "cool");
+      mqtt_client.publish("bed/ac/state", "cool");
       irsend.sendRaw(AC_19, 347, 38);
     }
     if (str_payload.equals("20.0")){
       Serial.println("Firing bedroom ac_20");
-      mqtt_client.publish("bedroom/ac/state", "cool");
+      mqtt_client.publish("bed/ac/state", "cool");
       irsend.sendRaw(AC_20, 347, 38);
     }
     if (str_payload.equals("21.0")){
       Serial.println("Firing bedroom ac_21");
-      mqtt_client.publish("bedroom/ac/state", "cool");
+      mqtt_client.publish("bed/ac/state", "cool");
       irsend.sendRaw(AC_21, 347, 38);
     }
     if (str_payload.equals("22.0")){
       Serial.println("Firing bedroom ac_22");
-      mqtt_client.publish("bedroom/ac/state", "cool");
+      mqtt_client.publish("bed/ac/state", "cool");
       irsend.sendRaw(AC_22, 347, 38);
     }
     if (str_payload.equals("23.0")){
       Serial.println("Firing bedroom ac_23");
-      mqtt_client.publish("bedroom/ac/state", "cool");
+      mqtt_client.publish("bed/ac/state", "cool");
       irsend.sendRaw(AC_23, 347, 38);
     }
     if (str_payload.equals("24.0")){
       Serial.println("Firing bedroom ac_24");
-      mqtt_client.publish("bedroom/ac/state", "cool");
+      mqtt_client.publish("bed/ac/state", "cool");
       irsend.sendRaw(AC_24, 347, 38);
     }
   }
-  if (String(topic).equals("bedroom/tv/power")){
+  if (String(topic).equals("bed/tv/power")){
     Serial.println("Firing bedroom tv_power");
     irsend.sendSAMSUNG(0xE0E040BF);
   }
-  if (String(topic).equals("bedroom/sound/power")){
+  if (String(topic).equals("bed/sound/power")){
     Serial.println("Firing bedroom sound_power");
     irsend.sendNEC(0x7E8154AB);
     irsend.sendRaw(NEC_Repeat, 3, 38);
   }
-  if (String(topic).equals("bedroom/sound/hdmi1")){
+  if (String(topic).equals("bed/sound/hdmi1")){
     Serial.println("Firing bedroom sound_hdmi1");
     irsend.sendNEC(0x5EA1E21C);
     irsend.sendRaw(NEC_Repeat, 3, 38);
   }
-  if (String(topic).equals("bedroom/sound/hdmi2")){
+  if (String(topic).equals("bed/sound/hdmi2")){
     Serial.println("Firing bedroom sound_hdmi2");
     irsend.sendNEC(0x5EA152AC);
     irsend.sendRaw(NEC_Repeat, 3, 38);
   }
-  if (String(topic).equals("bedroom/sound/av4")){
+  if (String(topic).equals("bed/sound/av4")){
     Serial.println("Firing bedroom sound_av4");
     irsend.sendNEC(0x5EA13AC4);
     irsend.sendRaw(NEC_Repeat, 3, 38);
   }
-  if (String(topic).equals("bedroom/sound/audio1")){
+  if (String(topic).equals("bed/sound/audio1")){
     Serial.println("Firing sound_audio1");
     irsend.sendNEC(0x5EA1A658);
     irsend.sendRaw(NEC_Repeat, 3, 38);
   }
-  if (String(topic).equals("bedroom/sound/up")){
+  if (String(topic).equals("bed/sound/up")){
     Serial.println("Firing bedroom sound_up");
     irsend.sendNEC(0x5EA158A7);
     irsend.sendRaw(NEC_Repeat, 3, 38);
   }
-  if (String(topic).equals("bedroom/sound/down")){
+  if (String(topic).equals("bed/sound/down")){
     Serial.println("Firing bedroom sound_down");
     irsend.sendNEC(0x5EA1D827);
     irsend.sendRaw(NEC_Repeat, 3, 38);
   }
-  if (String(topic).equals("bedroom/sound/mute")){
+  if (String(topic).equals("bed/sound/mute")){
     Serial.println("Firing bedroom sound_mute");
     irsend.sendNEC(0x5EA138C7);
     irsend.sendRaw(NEC_Repeat, 3, 38);
   }
-  if (String(topic).equals("bedroom/ir_tx/display")){
+  if (String(topic).equals("bed/ir_tx/display")){
     if (str_payload.equals("ON")){
       Serial.println("Display On");
       display_on = true;
@@ -247,18 +245,18 @@ void mqtt_reconnect(void) {
     // Attention: For some reason, using a long name for the topic causes the ntp to break.
     if (mqtt_client.connect(DEVICE_NAME, MQTT_USERNAME, MQTT_PASS)) {
       Serial.println("Connected");
-      mqtt_client.subscribe("bedroom/ac/command");
-      mqtt_client.subscribe("bedroom/ac/temperature");
-      mqtt_client.subscribe("bedroom/tv/power");
-      mqtt_client.subscribe("bedroom/sound/power");
-      mqtt_client.subscribe("bedroom/sound/hdmi1");
-      mqtt_client.subscribe("bedroom/sound/hdmi2");
-      mqtt_client.subscribe("bedroom/sound/av4");
-      mqtt_client.subscribe("bedroom/sound/audio1");
-      mqtt_client.subscribe("bedroom/sound/up");
-      mqtt_client.subscribe("bedroom/sound/down");
-      mqtt_client.subscribe("bedroom/sound/mute");
-      mqtt_client.subscribe("bedroom/ir_tx/display");
+      mqtt_client.subscribe("bed/ac/command");
+      mqtt_client.subscribe("bed/ac/temp");
+      mqtt_client.subscribe("bed/tv/power");
+      mqtt_client.subscribe("bed/sound/power");
+      mqtt_client.subscribe("bed/sound/hdmi1");
+      mqtt_client.subscribe("bed/sound/hdmi2");
+      mqtt_client.subscribe("bed/sound/av4");
+      mqtt_client.subscribe("bed/sound/audio1");
+      mqtt_client.subscribe("bed/sound/up");
+      mqtt_client.subscribe("bed/sound/down");
+      mqtt_client.subscribe("bed/sound/mute");
+      mqtt_client.subscribe("bed/ir_tx/display");
       Serial.println("Feeds subscribed");
     } else {
       display.clear();
@@ -280,9 +278,7 @@ void mqtt_reconnect(void) {
 void ota_setup(void) {
   // Hostname defaults to esp8266-[ChipID]
   ArduinoOTA.setHostname(DEVICE_NAME);
-
   ArduinoOTA.setPassword(OTA_PASS);
-
   ArduinoOTA.onStart([]() {
     String type;
     if (ArduinoOTA.getCommand() == U_FLASH) {
@@ -325,22 +321,13 @@ void check_connections(void){
       mqtt_reconnect();
 }
 
-String getFormattedDate(time_t t) {
-  String week_day = week_days[weekday(t) - 1];
-  String day_str = day(t) < 10 ? "0" + String(day(t)) : String(day(t));
-  String month_str = month(t) < 10 ? "0" + String(month(t)) : String(month(t));
-  String yeart_str = String(year(t));
-  return week_day + " - " + day_str + "/" + month_str + "/" + yeart_str;
-}
-
 void display_time(void) {
-  time_t t = timeClient.getEpochTime();
   display.clear(); // clear the display
   display.setFont(Roboto_30);
   display.setTextAlignment(TEXT_ALIGN_CENTER);
-  display.drawString(64, 0, timeClient.getFormattedTime());
+  display.drawString(64, 0, timeClient.getFormattedDateTime("%H:%M:%S"));
   display.setFont(Roboto_15);
-  display.drawString(64, 40, getFormattedDate(t));
+  display.drawString(64, 40, timeClient.getFormattedDateTime("%a - %d/%m/%Y"));
 }
 
 void loop() {
@@ -351,11 +338,19 @@ void loop() {
   if (millis() - prev_time > 5000) {
     prev_time = millis();
     sprintf(msg, "%ld", millis()/1000);
-    mqtt_client.publish("bedroom/ir_tx/uptime", msg);
-    Serial.println("Sent uptime message");
+    mqtt_client.publish("bed/ir_tx/uptime", msg);
+    Serial.print("Sent uptime message: ");
+    Serial.println(msg);
   }
   if (display_on){
-    display_time();
+    if(timeClient.isTimeSet()) {
+      display_time();
+    } else {
+      display.clear();
+      display.setTextAlignment(TEXT_ALIGN_CENTER);
+      display.setFont(ArialMT_Plain_16);
+      display.drawString(64, 22, "NTP outdated");
+    }
   } else {
     display.clear(); // clear the display
   }
