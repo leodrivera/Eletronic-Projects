@@ -1,8 +1,8 @@
 // Use this file to store all of the private credentials 
 // and connection details
 
-const char *WLAN_SSID = ;  // Your ROUTER SSID
-const char *WLAN_PASS = ; // and WiFi PASSWORD
+const char* WLAN_SSID = ;  // Your ROUTER SSID
+const char* WLAN_PASS = ; // and WiFi PASSWORD
 const char* OTA_PASS = ; // OTA password
 
 // MQTT
