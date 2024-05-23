@@ -10,13 +10,6 @@
 
 #define DEBUG_NTPClient
 
-struct DateLanguageData {
-    const char* shortWeekDays[7];
-    const char* longWeekDays[7];
-    const char* shortMonths[12];
-    const char* longMonths[12];
-};
-
 class NTPClient {
   private:
     UDP*          _udp;
@@ -42,6 +35,39 @@ class NTPClient {
     byte          _packetBuffer[NTP_PACKET_SIZE];
 
     void          sendNTPPacket();
+
+    struct DateLanguageData {
+        const char* shortWeekDays[7];
+        const char* longWeekDays[7];
+        const char* shortMonths[12];
+        const char* longMonths[12];
+    };
+
+    struct FullDateComponents {
+        int year;
+        int month;
+        int day;
+    };
+
+    // Language map
+    struct LanguageMap {
+        const char* code;
+        const DateLanguageData* data;
+    };
+
+    static const DateLanguageData EnglishData;
+    static const DateLanguageData SpanishData;
+    static const DateLanguageData PortugueseData;
+
+    const LanguageMap languageMap[3] = {
+        {"en", &EnglishData},
+        {"es", &SpanishData},
+        {"pt", &PortugueseData}
+    };
+
+    const int languageMapSize = sizeof(languageMap) / sizeof(languageMap[0]);
+    const DateLanguageData* findLanguageData(const String& code) const;
+    FullDateComponents calculateFullDateComponents(unsigned long epochTime) const;
 
   public:
     NTPClient(UDP& udp);
@@ -101,7 +127,7 @@ class NTPClient {
 
     // Get formatted date and time
     /**
-     * @return Date Time string formated. The available format codes are:
+     * @return Date Time string formatted. The available format codes are:
       %Y: Full year (e.g., 2023)
       %y: Last two digits of the year (e.g., 23 for 2023)
       %m: Month as a zero-padded decimal number (01 to 12)
@@ -137,7 +163,7 @@ class NTPClient {
     void setPoolServerName(const char* poolServerName);
 
      /**
-     * Set language for displaying date
+     * Set language for displaying date. Available languages are 'pt', 'es' and 'en' (default)
      * @param dateLanguage
      */
     void setDateLanguage(const String &dateLanguage);
